@@ -1,0 +1,10 @@
+{% extends "layout.html" %}{% block body %}
+<h1>Licenses</h1><a href="{{url_for('add')}}">Add New</a>
+<ul>
+  {% for l in licenses %}
+  <li><b>{{l.key}}</b> | {{l.status}} | expires: {{l.expires}} | device: {{l.device_id}}
+    <a href="{{url_for('delete', key=l.key)}}">Delete</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}
+

@@ -1,0 +1,10 @@
+{% extends "layout.html" %}{% block body %}
+<form method="POST">
+  Key: <input name="key"/><br>
+  Device ID: <input name="device_id" value="ANY"/><br>
+  Status: <select name="status"><option>valid</option><option>expired</option><option>invalid</option></select><br>
+  Expires: <input name="expires" placeholder="YYYY-MM-DD HH:MM:SS"/><br>
+  <button>Save</button>
+</form>
+{% endblock %}
+

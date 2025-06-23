@@ -1,0 +1,5 @@
+<!doctype html><html><head><title>Dashboard</title></head><body>
+{% if current_user.is_authenticated %}<a href="{{url_for('logout')}}">Logout</a>{% endif %}
+<hr>{% block body %}{% endblock %}
+</body></html>
+
