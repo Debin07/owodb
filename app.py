@@ -4,15 +4,15 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
+# ======= Flask Setup =======
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'ganti_dengan_secret_key'
+app.config['SECRET_KEY'] = 'ganti_secret_key_kamu'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///licenses.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# ====== MODELS ======
-
+# ======= Models =======
 class License(db.Model):
     key = db.Column(db.String, primary_key=True)
     device_id = db.Column(db.String, default="ANY")
@@ -22,10 +22,9 @@ class License(db.Model):
 class Admin(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, unique=True)
-    password = db.Column(db.String)  # hashed password
+    password = db.Column(db.String)
 
-# ====== LOGIN MANAGER ======
-
+# ======= Login Manager =======
 login_mgr = LoginManager(app)
 login_mgr.login_view = 'login'
 
@@ -37,8 +36,7 @@ def load_user(user_id):
 def inject_user():
     return dict(current_user=current_user)
 
-# ====== ROUTES ======
-
+# ======= Routes =======
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -90,8 +88,6 @@ def delete(key):
         db.session.commit()
     return redirect(url_for('index'))
 
-# ====== VERIFICATION API ======
-
 @app.route('/api/verify', methods=['POST'])
 def api_verify():
     data = request.json
@@ -113,18 +109,17 @@ def api_verify():
 
     return jsonify({'status': 'valid', 'expires': expires}), 200
 
-# ====== INIT DB & RUN ======
+# ======= Auto Init DB on Start =======
+with app.app_context():
+    db.create_all()
+    if not Admin.query.first():
+        admin = Admin(
+            username='Debin',
+            password=generate_password_hash('DebinWanta')
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print("✅ Admin default dibuat: admin / admin123")
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        if not Admin.query.first():
-            default_admin = Admin(
-                username='Debin07',
-                password=generate_password_hash('Pantat21')
-            )
-            db.session.add(default_admin)
-            db.session.commit()
-            print("[INFO] Default admin created: admin / admin123")
-    app.run(host='0.0.0.0', port=8000, debug=True)
-
+# ======= Run =======
+app.run(host='0.0.0.0', port=8000)
