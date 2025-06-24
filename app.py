@@ -120,8 +120,8 @@ if __name__ == '__main__':
         db.create_all()
         if not Admin.query.first():
             default_admin = Admin(
-                username='admin',
-                password=generate_password_hash('admin123')
+                username='Debin07',
+                password=generate_password_hash('Pantat21')
             )
             db.session.add(default_admin)
             db.session.commit()
