@@ -8,9 +8,9 @@ import os
 
 # ======= Flask Setup =======
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')  # Automatically injected in Railway
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = os.getenv("SECRET_KEY", "supersecret")  # Secure your app in production
+app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
 db.init_app(app)
 
@@ -111,25 +111,22 @@ def api_verify():
 
     return jsonify({'status': 'valid', 'expires': expires}), 200
 
-# ======= DB Initialization (Auto-migrate + Default Admin) =======
+# ======= DB Initialization with ENV-based Admin =======
 with app.app_context():
     db.create_all()
+    if not Admin.query.first():
+        admin_user = os.getenv('ADMIN_USERNAME')
+        admin_pass = os.getenv('ADMIN_PASSWORD')
+        if admin_user and admin_pass:
+            hashed = generate_password_hash(admin_pass)
+            default_admin = Admin(username=admin_user, password=hashed)
+            db.session.add(default_admin)
+            db.session.commit()
+            print(f"✅ Admin default dibuat: {admin_user}")
+        else:
+            print("ℹ️ Admin default tidak dibuat — variabel ENV tidak lengkap.")
 
-    # Buat admin default jika ENV variabel tersedia dan belum ada user
-    admin_user = os.getenv('ADMIN_USERNAME')
-    admin_pass = os.getenv('ADMIN_PASSWORD')
-
-    if admin_user and admin_pass and not Admin.query.first():
-        hashed = generate_password_hash(admin_pass)
-        default_admin = Admin(username=admin_user, password=hashed)
-        db.session.add(default_admin)
-        db.session.commit()
-        print(f"✅ Admin default dibuat: {admin_user}")
-    else:
-        print("ℹ️ Tidak membuat admin default (entah sudah ada, atau variabel ENV kosong).")
-
-
-# ======= Run (for local) =======
+# ======= Run (for local testing) =======
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     app.run(debug=True, host="0.0.0.0", port=port)
