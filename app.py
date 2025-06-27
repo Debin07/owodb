@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-from models import db
+from models import db, License, Admin
 import os
 
 # ======= Flask Setup =======
@@ -13,18 +13,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
 db.init_app(app)
-
-# ======= Models =======
-class License(db.Model):
-    key = db.Column(db.String, primary_key=True)
-    device_id = db.Column(db.String, default="ANY")
-    status = db.Column(db.String, default="valid")
-    expires = db.Column(db.String)  # Format: "YYYY-MM-DD HH:MM:SS"
-
-class Admin(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String, unique=True, nullable=False)
-    password = db.Column(db.String, nullable=False)
 
 # ======= Login Manager =======
 login_mgr = LoginManager(app)
