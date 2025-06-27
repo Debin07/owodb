@@ -3,14 +3,16 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from models import db
+import os
 
 # ======= Flask Setup =======
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'ganti_secret_key_kamu'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///licenses.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')  # Automatically injected in Railway
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = os.getenv("SECRET_KEY", "supersecret")  # Secure your app in production
 
-db = SQLAlchemy(app)
+db.init_app(app)
 
 # ======= Models =======
 class License(db.Model):
@@ -21,8 +23,8 @@ class License(db.Model):
 
 class Admin(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String, unique=True)
-    password = db.Column(db.String)
+    username = db.Column(db.String, unique=True, nullable=False)
+    password = db.Column(db.String, nullable=False)
 
 # ======= Login Manager =======
 login_mgr = LoginManager(app)
@@ -109,20 +111,25 @@ def api_verify():
 
     return jsonify({'status': 'valid', 'expires': expires}), 200
 
-# ======= Auto Init DB on Start =======
+# ======= DB Initialization (Auto-migrate + Default Admin) =======
 with app.app_context():
     db.create_all()
-    if not Admin.query.first():
-        admin = Admin(
-            username='Debin',
-            password=generate_password_hash('DebinWanta')
-        )
-        db.session.add(admin)
-        db.session.commit()
-        print("✅ Admin default dibuat: admin / admin123")
 
-# ======= Run =======
+    # Buat admin default jika ENV variabel tersedia dan belum ada user
+    admin_user = os.getenv('ADMIN_USERNAME')
+    admin_pass = os.getenv('ADMIN_PASSWORD')
+
+    if admin_user and admin_pass and not Admin.query.first():
+        hashed = generate_password_hash(admin_pass)
+        default_admin = Admin(username=admin_user, password=hashed)
+        db.session.add(default_admin)
+        db.session.commit()
+        print(f"✅ Admin default dibuat: {admin_user}")
+    else:
+        print("ℹ️ Tidak membuat admin default (entah sudah ada, atau variabel ENV kosong).")
+
+
+# ======= Run (for local) =======
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 8000))
     app.run(debug=True, host="0.0.0.0", port=port)
